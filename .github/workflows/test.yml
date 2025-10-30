@@ -1,0 +1,99 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      
+      - name: Lint
+        working-directory: backend
+        run: npm run lint
+      
+      - name: Build
+        working-directory: backend
+        run: npm run build
+      
+      - name: Test
+        working-directory: backend
+        env:
+          OPENAI_API_KEY: test-key
+          PHARMACY_API_URL: https://test-api.com
+        run: npm run test
+      
+      - name: Test Coverage
+        working-directory: backend
+        env:
+          OPENAI_API_KEY: test-key
+          PHARMACY_API_URL: https://test-api.com
+        run: npm run test:cov
+
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      
+      - name: Lint
+        working-directory: frontend
+        run: npm run build  # This includes ESLint checks
+      
+      - name: Test
+        working-directory: frontend
+        run: npm test -- --coverage --watchAll=false
+
+  test-docker:
+    name: Test Docker Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Test Backend Docker Build
+        working-directory: backend
+        run: docker build -t pharmacy-chatbot-backend:test .
+      
+      - name: Test Frontend Docker Build
+        working-directory: frontend
+        run: docker build -t pharmacy-chatbot-frontend:test .
+      
+      - name: Test Docker Compose
+        run: |
+          echo "OPENAI_API_KEY=test-key" > .env
+          echo "PHARMACY_API_URL=https://test-api.com" >> .env
+          echo "REACT_APP_API_URL=http://localhost:3001" >> .env
+          docker-compose config
