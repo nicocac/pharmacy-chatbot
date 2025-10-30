@@ -49,8 +49,13 @@ A sophisticated inbound sales chatbot for Pharmesol that handles calls from phar
 
 2. **Set up environment variables**
    ```bash
-   cp .env.example .env
-   # Edit .env with your OpenAI API key
+   # Backend
+   cp backend/.env.example backend/.env
+   # Edit backend/.env (set OPENAI_API_KEY and other values as needed)
+
+   # Frontend (optional)
+   # Create frontend/.env.local if you need to override defaults
+   echo "REACT_APP_API_URL=http://localhost:3001" > frontend/.env.local
    ```
 
 3. **Start with Docker Compose**
@@ -58,10 +63,17 @@ A sophisticated inbound sales chatbot for Pharmesol that handles calls from phar
    docker-compose up --build
    ```
 
-4. **Or run manually**
+4. **Or run locally (without Docker)**
    ```bash
-   # Root
-   npm run start
+   # From repo root
+   npm run start        # runs ./run-local.sh (backend hot + frontend dev)
+   ```
+
+   Advanced:
+   ```bash
+   # Run services individually (from separate terminals)
+   npm run backend:dev  # NestJS with hot reload on :3001
+   npm run frontend:dev # React dev server on :3000
    ```
 
 5. **Access the application**
@@ -117,50 +129,53 @@ The AWS deployment includes comprehensive monitoring:
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key for chatbot | Required |
-| `PHARMACY_API_URL` | External pharmacy API URL | Mock API |
-| `NODE_ENV` | Node.js environment | development |
-| `PORT` | Backend server port | 3001 |
+Backend (backend/.env or backend/.env.example):
+- OPENAI_API_KEY: Your OpenAI API key (required)
+- PHARMACY_API_URL: External pharmacy API base URL (optional for mocks)
+- PORT: Backend server port (default: 3001)
+- NODE_ENV: Node.js environment (default: development)
+
+Frontend (frontend/.env.local):
+- REACT_APP_API_URL: Backend API base URL for the frontend (default: http://localhost:3001)
 
 ### AWS Configuration
 
-The infrastructure is defined using AWS CDK and includes:
-- Auto-scaling ECS Fargate services
-- CloudFront distribution with S3 origin
-- Secrets Manager for secure key storage
-- CloudWatch monitoring and alerting
-- VPC with private subnets for security
+The production infrastructure is defined with SST (Serverless Stack) and includes:
+- AWS Lambda for the backend API (NestJS handler)
+- API Gateway (HTTP API) routing to Lambda
+- S3 + CloudFront for hosting the React frontend
+- AWS Secrets Manager for secure key storage (OpenAI API key, etc.)
+- CloudWatch logging and metrics; SST Console for live debugging
+- Optional custom domains and CI/CD via GitHub Actions
 
 ## 📁 Project Structure
 
 ```
 pharmacy-chatbot/
-├── backend/                 # NestJS API server
+├── backend/                   # NestJS API server
 │   ├── src/
-│   │   ├── controllers/     # API endpoints
-│   │   ├── services/        # Business logic
-│   │   ├── dto/            # Data transfer objects
-│   │   ├── interfaces/     # TypeScript interfaces
-│   │   └── tests/          # Unit and integration tests
-│   ├── Dockerfile          # Container configuration
-│   └── package.json        # Dependencies
-├── frontend/               # React application
+│   │   ├── controllers/       # API endpoints
+│   │   ├── services/          # Business logic (OpenAI, pharmacy, etc.)
+│   │   └── tests/             # Unit and integration tests
+│   ├── .env.example           # Backend env vars template
+│   ├── Dockerfile             # Container configuration
+│   └── package.json           # Dependencies & scripts
+├── frontend/                  # React application
 │   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── services/       # API integration
-│   │   └── types/          # TypeScript types
-│   ├── Dockerfile          # Container configuration
-│   └── package.json        # Dependencies
-├── infrastructure/         # AWS CDK infrastructure
-│   ├── lib/                # CDK stack definitions
-│   └── bin/                # CDK entry point
-├── .github/workflows/      # GitHub Actions CI/CD
-├── scripts/                # Deployment scripts
-├── docker-compose.yml      # Local development
-├── DEPLOYMENT.md          # Deployment guide
-└── README.md              # This file
+│   │   ├── components/        # UI components
+│   │   ├── services/          # API integration
+│   │   └── types/             # TypeScript types
+│   ├── .env.local             # Frontend local env overrides
+│   ├── Dockerfile             # Container configuration
+│   └── package.json           # Dependencies & scripts
+├── scripts/                   # Helper/deployment scripts
+├── docker-compose.yml         # Local multi-service setup
+├── run-local.sh               # Local dev runner (backend + frontend)
+├── sst.config.ts              # SST app configuration
+├── sst-env.d.ts               # SST typings
+├── DEPLOYMENT.md              # Deployment guide
+├── package.json               # Root scripts (start/dev/deploy)
+└── README.md                  # This file
 ```
 
 ## 🚢 Deployment Options
@@ -225,10 +240,6 @@ The GitHub Actions workflow includes:
 - **Auto Scaling**: 1-10 tasks based on CPU utilization
 - **Load Balancer**: Application Load Balancer with health checks
 - **CDN**: CloudFront with global edge locations
-
-### Estimated Costs
-- **Development**: ~$0 (local development)
-- **Production**: ~$60-115/month (depending on usage)
 
 ## 🛠️ Development
 
