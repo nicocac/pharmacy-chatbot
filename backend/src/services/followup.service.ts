@@ -23,7 +23,9 @@ export class FollowUpService {
       );
       return true;
     } catch (error) {
-      this.logger.error(`[MOCK] Failed to send email: ${error.message}`);
+      this.logger.error(
+        `[MOCK] Failed to send email: ${(error as Error).message}`,
+      );
       return false;
     }
   }
@@ -51,7 +53,9 @@ export class FollowUpService {
       );
       return true;
     } catch (error) {
-      this.logger.error(`[MOCK] Failed to schedule callback: ${error.message}`);
+      this.logger.error(
+        `[MOCK] Failed to schedule callback: ${(error as Error).message}`,
+      );
       return false;
     }
   }

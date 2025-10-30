@@ -19,7 +19,15 @@ export class PharmacyService {
       this.logger.log(`Looking up pharmacy with phone: ${phoneNumber}`);
 
       const response = await axios.get(this.apiUrl);
-      const pharmaciesData = response.data;
+      const pharmaciesData = response.data as Array<{
+        id: number;
+        name: string;
+        phone: string;
+        city?: string;
+        state?: string;
+        email?: string;
+        prescriptions?: Array<{ drug: string; count: number }>;
+      }>;
 
       const pharmacy = pharmaciesData.find(
         (p) =>
@@ -53,7 +61,9 @@ export class PharmacyService {
       this.logger.log(`No pharmacy found for phone: ${phoneNumber}`);
       return null;
     } catch (error) {
-      this.logger.error(`Error fetching pharmacy data: ${error.message}`);
+      this.logger.error(
+        `Error fetching pharmacy data: ${(error as Error).message}`,
+      );
       throw new Error('Failed to lookup pharmacy information');
     }
   }
@@ -73,7 +83,15 @@ export class PharmacyService {
   async getAllPharmacies(): Promise<Pharmacy[]> {
     try {
       const response = await axios.get(this.apiUrl);
-      const pharmaciesData = response.data;
+      const pharmaciesData = response.data as Array<{
+        id: number;
+        name: string;
+        phone: string;
+        city?: string;
+        state?: string;
+        email?: string;
+        prescriptions?: Array<{ drug: string; count: number }>;
+      }>;
 
       return pharmaciesData.map((pharmacy) => ({
         id: pharmacy.id.toString(),
@@ -91,7 +109,9 @@ export class PharmacyService {
         prescriptions: pharmacy.prescriptions,
       }));
     } catch (error) {
-      this.logger.error(`Error fetching all pharmacies: ${error.message}`);
+      this.logger.error(
+        `Error fetching all pharmacies: ${(error as Error).message}`,
+      );
       throw new Error('Failed to fetch pharmacy data');
     }
   }
@@ -101,9 +121,9 @@ export class PharmacyService {
       this.logger.log(`Creating new pharmacy: ${pharmacyData.name}`);
 
       const response = await axios.post(this.apiUrl, pharmacyData);
-      return response.data;
+      return response.data as Pharmacy;
     } catch (error) {
-      this.logger.error(`Error creating pharmacy: ${error.message}`);
+      this.logger.error(`Error creating pharmacy: ${(error as Error).message}`);
       throw new Error('Failed to create pharmacy');
     }
   }

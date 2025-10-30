@@ -19,4 +19,4 @@ async function bootstrap() {
     `Pharmacy Chatbot API running on port ${process.env.PORT ?? 3001}`,
   );
 }
-bootstrap();
+void bootstrap();

@@ -8,10 +8,7 @@ import {
   ScheduleCallbackDto,
   SendFollowUpEmailDto,
 } from '../dto/chat.dto';
-import {
-  ConversationContext,
-  ChatMessage,
-} from '../interfaces/pharmacy.interface';
+import { ConversationContext } from '../interfaces/pharmacy.interface';
 
 @Controller('api/chatbot')
 export class ChatbotController {
@@ -73,7 +70,7 @@ export class ChatbotController {
         pharmacy: pharmacy || null,
       };
     } catch (error) {
-      this.logger.error(`Error starting chat: ${error.message}`);
+      this.logger.error(`Error starting chat: ${(error as Error).message}`);
       return {
         success: false,
         message:
@@ -105,10 +102,7 @@ export class ChatbotController {
       // Extract information if collecting from new lead
       if (context.collectingInfo && context.pendingInfo) {
         const extractedInfo =
-          await this.openAIService.extractInformationFromResponse(
-            message,
-            context,
-          );
+          await this.openAIService.extractInformationFromResponse(message);
         Object.assign(context.pendingInfo, extractedInfo);
 
         // Check if we have enough information
@@ -128,7 +122,9 @@ export class ChatbotController {
             context.pharmacy = newPharmacy;
             context.isNewLead = false;
           } catch (error) {
-            this.logger.error(`Error creating pharmacy: ${error.message}`);
+            this.logger.error(
+              `Error creating pharmacy: ${(error as Error).message}`,
+            );
           }
         }
       }
@@ -150,7 +146,9 @@ export class ChatbotController {
         pharmacy: context.pharmacy,
       };
     } catch (error) {
-      this.logger.error(`Error processing message: ${error.message}`);
+      this.logger.error(
+        `Error processing message: ${(error as Error).message}`,
+      );
       return {
         success: false,
         message:
@@ -192,7 +190,9 @@ export class ChatbotController {
         };
       }
     } catch (error) {
-      this.logger.error(`Error scheduling callback: ${error.message}`);
+      this.logger.error(
+        `Error scheduling callback: ${(error as Error).message}`,
+      );
       return {
         success: false,
         message:
@@ -245,7 +245,9 @@ export class ChatbotController {
         };
       }
     } catch (error) {
-      this.logger.error(`Error sending follow-up email: ${error.message}`);
+      this.logger.error(
+        `Error sending follow-up email: ${(error as Error).message}`,
+      );
       return {
         success: false,
         message:
@@ -280,7 +282,9 @@ export class ChatbotController {
         pharmacies,
       };
     } catch (error) {
-      this.logger.error(`Error fetching pharmacies: ${error.message}`);
+      this.logger.error(
+        `Error fetching pharmacies: ${(error as Error).message}`,
+      );
       return {
         success: false,
         message: 'Failed to fetch pharmacy data.',

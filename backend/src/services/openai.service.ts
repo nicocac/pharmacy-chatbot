@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import {
-  ChatMessage,
   ConversationContext,
   Pharmacy,
 } from '../interfaces/pharmacy.interface';
@@ -41,7 +40,9 @@ export class OpenAIService {
         "I apologize, but I'm having trouble responding right now. Please try again."
       );
     } catch (error) {
-      this.logger.error(`Error generating chat response: ${error.message}`);
+      this.logger.error(
+        `Error generating chat response: ${(error as Error).message}`,
+      );
       return "I apologize, but I'm experiencing technical difficulties. Please try again in a moment.";
     }
   }
@@ -88,7 +89,6 @@ ${context.collectingInfo ? 'You are currently collecting basic information from 
 
   async extractInformationFromResponse(
     userMessage: string,
-    context: ConversationContext,
   ): Promise<Partial<Pharmacy>> {
     try {
       const extractionPrompt = `
@@ -113,10 +113,12 @@ Example: {"name": "ABC Pharmacy", "address": "123 Main St", "contactPerson": "Jo
 
       const extracted = JSON.parse(
         response.choices[0]?.message?.content || '{}',
-      );
+      ) as Partial<Pharmacy>;
       return extracted;
     } catch (error) {
-      this.logger.error(`Error extracting information: ${error.message}`);
+      this.logger.error(
+        `Error extracting information: ${(error as Error).message}`,
+      );
       return {};
     }
   }
