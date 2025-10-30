@@ -10,22 +10,34 @@ export default $config({
   },
   async run() {
     const api = new sst.aws.Function("PharmacyChatbotApi", {
-      handler: "./backend/dist/lambda.handler",
+      handler: "backend/src/lambda.handler",
       runtime: "nodejs20.x",
       memory: "1 GB",
       timeout: "30 seconds",
       environment: {
         NODE_ENV: "production",
         PHARMACY_API_URL: "https://67e14fb758cc6bf785254550.mockapi.io/pharmacies",
+        OPENAI_API_KEY: "placeholder-will-be-set-later",
+      },
+      nodejs: {
+        esbuild: {
+          external: [
+            "@nestjs/websockets",
+            "@nestjs/microservices", 
+            "@grpc/grpc-js",
+            "@grpc/proto-loader",
+            "kafkajs",
+            "mqtt",
+            "nats",
+            "ioredis",
+            "amqplib",
+            "amqp-connection-manager",
+            "@nestjs/platform-socket.io"
+          ]
+        }
       },
       url: true,
     });
-
-    // Secret for OpenAI API Key
-    const openAiSecret = new sst.aws.Secret("OpenAIAPIKey");
-
-    // Link the secret to the function
-    api.linkTo([openAiSecret]);
 
     // Frontend hosting with SST's StaticSite
     const frontend = new sst.aws.StaticSite("PharmacyChatbotFrontend", {
@@ -42,7 +54,6 @@ export default $config({
     return {
       api: api.url,
       frontend: frontend.url,
-      secretName: openAiSecret.name,
     };
   },
 });

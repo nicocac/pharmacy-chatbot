@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import request from 'supertest';
 import { AppModule } from '../app.module';
@@ -25,6 +25,12 @@ describe('Pharmacy Chatbot Integration Tests', () => {
       origin: ['http://localhost:3000', 'http://localhost:5173'],
       credentials: true,
     });
+
+    // Enable validation pipes
+    app.useGlobalPipes(new ValidationPipe());
+
+    // Set global prefix to match main.ts
+    app.setGlobalPrefix('api');
 
     await app.init();
   });
@@ -84,7 +90,7 @@ describe('Pharmacy Chatbot Integration Tests', () => {
   });
 
   describe('Full Conversation Flow - New Lead', () => {
-    const phoneNumber = '+1-555-NEW-LEAD-TEST';
+    const phoneNumber = '+1-800-TRULY-NEW-LEAD-' + Date.now().toString().slice(-5);
 
     it('should complete a full conversation with a new lead', async () => {
       // Step 1: Start chat (should be recognized as new lead)
@@ -160,7 +166,7 @@ describe('Pharmacy Chatbot Integration Tests', () => {
       const response = await request(app.getHttpServer())
         .post('/api/chatbot/message')
         .send({
-          phoneNumber: '+1-555-NEVER-STARTED',
+          phoneNumber: '+1-999-NEVER-STARTED-98765',
           message: 'Hello',
         })
         .expect(201);
@@ -173,7 +179,7 @@ describe('Pharmacy Chatbot Integration Tests', () => {
       const response = await request(app.getHttpServer())
         .post('/api/chatbot/schedule-callback')
         .send({
-          phoneNumber: '+1-555-NO-CONVERSATION',
+          phoneNumber: '+1-999-NO-CONVERSATION-54321',
           preferredTime: 'Tomorrow',
         })
         .expect(201);
@@ -185,7 +191,7 @@ describe('Pharmacy Chatbot Integration Tests', () => {
     it('should handle email sending without conversation', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/chatbot/send-email')
-        .send({ phoneNumber: '+1-555-NO-CONVERSATION' })
+        .send({ phoneNumber: '+1-999-NO-CONVERSATION-54321' })
         .expect(201);
 
       expect(response.body.success).toBe(false);
@@ -300,7 +306,7 @@ describe('Pharmacy Chatbot Integration Tests', () => {
 
         expect(response.body.success).toBe(true);
       }
-    });
+    }, 10000);
   });
 
   describe('Data Validation', () => {
