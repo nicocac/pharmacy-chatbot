@@ -5,6 +5,8 @@ import { PharmacyChatbotStack } from '../lib/pharmacy-chatbot-stack';
 
 const app = new cdk.App();
 
+// check deployment environment
+
 const env = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
   region: process.env.CDK_DEFAULT_REGION || 'us-east-1',
