@@ -15,13 +15,13 @@ A sophisticated inbound sales chatbot for Pharmesol that handles calls from phar
 
 ## 🏗️ Architecture
 
-### Production AWS Architecture
+### Production AWS Architecture (SST)
 - **Frontend**: React app served via S3 + CloudFront CDN
-- **Backend**: NestJS API running on ECS Fargate with Auto Scaling
-- **Load Balancer**: Application Load Balancer for high availability
-- **Storage**: S3 for static assets, ECR for container images
+- **Backend**: NestJS API running on AWS Lambda (serverless)
+- **API Gateway**: HTTP API for Lambda function access
+- **Storage**: S3 for static assets
 - **Secrets**: AWS Secrets Manager for secure API key storage
-- **Monitoring**: CloudWatch dashboards, alarms, and log aggregation
+- **Monitoring**: CloudWatch logs and SST Console
 - **CI/CD**: GitHub Actions for automated deployments
 
 ### Application Components
@@ -77,8 +77,14 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment instructions.
 
 **Quick Deploy:**
 ```bash
+# Set up your OpenAI API key
 export OPENAI_API_KEY="your-openai-api-key"
-./scripts/deploy.sh
+
+# Deploy with SST
+npm run deploy
+
+# Or use the deployment script
+./scripts/deploy-sst.sh production
 ```
 
 ## 🧪 Testing
@@ -104,8 +110,8 @@ npm test
 ## 📊 Monitoring (Production)
 
 The AWS deployment includes comprehensive monitoring:
-- **ECS Service Metrics**: CPU/Memory utilization, task count
-- **Load Balancer Metrics**: Request count, response times, error rates
+- **Lambda Metrics**: Invocations, duration, error rates
+- **API Gateway Metrics**: Request count, response times, error rates
 - **CloudFront Metrics**: Cache hit ratio, origin requests
 - **Application Logs**: Error rates and custom metrics
 - **Automated Alerts**: For high resource usage, errors, and response times
@@ -211,8 +217,8 @@ pharmacy-chatbot/
 The GitHub Actions workflow includes:
 - **Automated Testing**: Unit tests, integration tests, linting
 - **Security Scanning**: Container vulnerability scanning
-- **Infrastructure Deployment**: CDK stack deployment
-- **Application Deployment**: Container builds and ECS updates
+- **Infrastructure Deployment**: SST stack deployment
+- **Application Deployment**: Lambda function updates
 - **Cache Management**: CloudFront cache invalidation
 
 ## 📈 Performance & Scaling
@@ -251,7 +257,7 @@ The GitHub Actions workflow includes:
 
 - **Issues**: Report bugs or request features via GitHub Issues
 - **Documentation**: See [DEPLOYMENT.md](./DEPLOYMENT.md) for deployment details
-- **Architecture**: Review CDK stacks in `/infrastructure` for AWS setup
+- **Architecture**: Review SST configuration in `sst.config.ts` and `/sst` folder for AWS setup
 - **Testing**: Run test suites before submitting pull requests
 
 ## 🔮 Future Enhancements

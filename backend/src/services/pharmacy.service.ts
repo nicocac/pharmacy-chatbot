@@ -51,7 +51,7 @@ export class PharmacyService {
           state: pharmacy.state,
           rxVolume: this.calculateRxVolume(pharmacy.prescriptions || []),
           contactPerson: 'Pharmacy Manager', // Default since not provided by API
-          email: pharmacy.email,
+          email: pharmacy.email || null,
           prescriptions: pharmacy.prescriptions,
         };
 
@@ -105,7 +105,7 @@ export class PharmacyService {
         state: pharmacy.state,
         rxVolume: this.calculateRxVolume(pharmacy.prescriptions || []),
         contactPerson: 'Pharmacy Manager',
-        email: pharmacy.email,
+        email: pharmacy.email || null,
         prescriptions: pharmacy.prescriptions,
       }));
     } catch (error) {

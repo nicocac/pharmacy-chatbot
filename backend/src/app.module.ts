@@ -6,6 +6,7 @@ import { ChatbotController } from './controllers/chatbot.controller';
 import { PharmacyService } from './services/pharmacy.service';
 import { OpenAIService } from './services/openai.service';
 import { FollowUpService } from './services/followup.service';
+import { PharmesolService } from './services/pharmesol.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import { FollowUpService } from './services/followup.service';
     }),
   ],
   controllers: [AppController, ChatbotController],
-  providers: [AppService, PharmacyService, OpenAIService, FollowUpService],
+  providers: [AppService, PharmacyService, OpenAIService, FollowUpService, PharmesolService],
 })
 export class AppModule {}

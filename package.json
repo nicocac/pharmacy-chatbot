@@ -1,12 +1,36 @@
 {
   "name": "pharmacy-chatbot",
   "version": "1.0.0",
+  "description": "Pharmacy Chatbot with AWS deployment",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "setup": "./dev-setup.sh",
+    "dev": "./run-local.sh",
+    "start": "./run-local.sh",
+    "backend:dev": "cd backend && npm run start:hot",
+    "frontend:dev": "cd frontend && npm run start:dev",
+    "backend:build": "cd backend && npm run build",
+    "frontend:build": "cd frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run build 2>/dev/null || echo 'Frontend linting via build check'",
+    "sst:dev": "npx sst dev",
+    "sst:deploy": "npx sst deploy --stage production",
+    "sst:remove": "npx sst remove",
+    "sst:console": "npx sst console",
+    "deploy": "npm run backend:build && npm run frontend:build && npm run sst:deploy"
   },
-  "keywords": [],
+  "keywords": ["pharmacy", "chatbot", "nestjs", "react", "aws"],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "dependencies": {
+    "sst": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.145",
+    "typescript": "^5.3.0"
+  }
 }

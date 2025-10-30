@@ -40,10 +40,10 @@ echo -e "${YELLOW}📦 Installing frontend dependencies...${NC}"
 cd ../frontend
 npm install
 
-# Start backend in background
-echo -e "${YELLOW}🔧 Starting backend server...${NC}"
+# Start backend in background with hot reload
+echo -e "${YELLOW}🔧 Starting backend server with hot reload...${NC}"
 cd ../backend
-npm run start:dev &
+npm run start:hot &
 BACKEND_PID=$!
 echo -e "${GREEN}✅ Backend started with PID: $BACKEND_PID${NC}"
 
@@ -51,15 +51,15 @@ echo -e "${GREEN}✅ Backend started with PID: $BACKEND_PID${NC}"
 echo -e "${YELLOW}⏳ Waiting for backend to be ready...${NC}"
 sleep 5
 
-# Start frontend
-echo -e "${YELLOW}🎨 Starting frontend server...${NC}"
+# Start frontend with hot reload
+echo -e "${YELLOW}🎨 Starting frontend server with hot reload...${NC}"
 cd ../frontend
-npm run dev &
+npm run start:dev &
 FRONTEND_PID=$!
 echo -e "${GREEN}✅ Frontend started with PID: $FRONTEND_PID${NC}"
 
-echo -e "${GREEN}✨ Application is running!${NC}"
-echo -e "${GREEN}📱 Frontend: http://localhost:5173${NC}"
+echo -e "${GREEN}✨ Application is running with hot reload!${NC}"
+echo -e "${GREEN}📱 Frontend: http://localhost:3000${NC}"
 echo -e "${GREEN}🔧 Backend API: http://localhost:3001${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
 

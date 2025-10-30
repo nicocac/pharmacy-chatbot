@@ -5,20 +5,35 @@ import {
   ConversationContext,
   Pharmacy,
 } from '../interfaces/pharmacy.interface';
+import { PharmesolService } from './pharmesol.service';
 
 @Injectable()
 export class OpenAIService {
   private readonly logger = new Logger(OpenAIService.name);
   private readonly openai: OpenAI;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private pharmeSolService: PharmesolService,
+  ) {
     this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+      apiKey: this.configService.get<string>('OPENAI_API_KEY') || 
+              process.env.OPENAI_API_KEY,
     });
   }
 
   async generateChatResponse(context: ConversationContext): Promise<string> {
     try {
+      // Check if the latest user message is asking about Pharmesol
+      const latestMessage =
+        context.conversation[context.conversation.length - 1];
+      if (
+        latestMessage?.role === 'user' &&
+        (await this.pharmeSolService.isPharmesolQuestion(latestMessage.content))
+      ) {
+        return this.pharmeSolService.getPharmesolResponse();
+      }
+
       const systemPrompt = this.buildSystemPrompt(context);
       const messages = [
         { role: 'system' as const, content: systemPrompt },

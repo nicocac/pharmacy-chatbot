@@ -1,356 +1,304 @@
-# Pharmacy Chatbot - AWS Deployment Guide
+# Pharmacy Chatbot Deployment Guide
 
-This guide provides comprehensive instructions for deploying the Pharmacy Chatbot application to AWS.
+This guide covers the deployment of the Pharmacy Chatbot application to AWS using SST (Serverless Stack).
 
-## 🏗️ Architecture Overview
+## Prerequisites
 
-The application is deployed using a modern, scalable AWS architecture:
+- AWS Account with appropriate permissions
+- AWS CLI installed and configured
+- Node.js (version 18 or later)
+- Git
 
-- **Frontend**: React app served via S3 + CloudFront CDN
-- **Backend**: NestJS API running on ECS Fargate with Auto Scaling
-- **Load Balancer**: Application Load Balancer for high availability
-- **Storage**: S3 for static assets, ECR for container images
-- **Secrets**: AWS Secrets Manager for secure API key storage
-- **Monitoring**: CloudWatch dashboards, alarms, and log aggregation
-- **CI/CD**: GitHub Actions for automated deployments
+## Architecture Overview
 
-## 📋 Prerequisites
+The application is deployed using the following AWS services:
 
-Before deploying, ensure you have:
+- **AWS Lambda**: Runs the NestJS backend API (serverless)
+- **Amazon S3**: Hosts the React frontend
+- **Amazon CloudFront**: CDN for the frontend with optimized caching
+- **AWS Secrets Manager**: Stores the OpenAI API key
+- **API Gateway**: HTTP API for the Lambda function
+- **IAM Roles**: Secure access management
 
-1. **AWS Account** with appropriate permissions
-2. **AWS CLI** installed and configured
-3. **Docker** installed for local testing
-4. **Node.js 18+** installed
-5. **OpenAI API Key** for the chatbot functionality
+## Why SST?
 
-## 🚀 Quick Deployment
+SST (Serverless Stack) provides several advantages over CDK:
 
-### Option 1: Automated Script (Recommended)
+- **Live Lambda Development**: Test your functions locally against real AWS resources
+- **Better DX**: Simplified configuration and deployment
+- **Cost Effective**: Pay only for what you use with serverless architecture
+- **Faster Deployments**: Incremental deployments and hot swapping
+- **Type Safety**: Full TypeScript support throughout
+
+## Deployment Steps
+
+### 1. Clone the Repository
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
+git clone <repository-url>
 cd pharmacy-chatbot
-
-# Set up environment variables
-export OPENAI_API_KEY="your-openai-api-key"
-export AWS_REGION="us-east-1"  # Optional, defaults to us-east-1
-
-# Run the deployment script
-./scripts/deploy.sh
 ```
 
-### Option 2: Manual Deployment
-
-#### Step 1: Deploy Infrastructure
+### 2. Install Dependencies
 
 ```bash
-cd infrastructure
+# Install root dependencies (includes SST)
 npm install
 
-# Bootstrap CDK (first time only)
-npx cdk bootstrap --region us-east-1
-
-# Deploy the stack
-npx cdk deploy --require-approval never
-```
-
-#### Step 2: Update OpenAI API Key
-
-```bash
-# Get the secret ARN from CDK outputs
-SECRET_ARN=$(aws cloudformation describe-stacks \
-  --stack-name PharmacyChatbotStack \
-  --query 'Stacks[0].Outputs[?OutputKey==`OpenAISecretArn`].OutputValue' \
-  --output text)
-
-# Update the secret
-aws secretsmanager update-secret \
-  --secret-id $SECRET_ARN \
-  --secret-string '{"openai_api_key":"your-openai-api-key"}'
-```
-
-#### Step 3: Build and Push Backend
-
-```bash
-# Get ECR repository URI
-BACKEND_REPO=$(aws cloudformation describe-stacks \
-  --stack-name PharmacyChatbotStack \
-  --query 'Stacks[0].Outputs[?OutputKey==`BackendRepositoryUri`].OutputValue' \
-  --output text)
-
-# Login to ECR
-aws ecr get-login-password --region us-east-1 | \
-  docker login --username AWS --password-stdin $BACKEND_REPO
-
-# Build and push
+# Install backend dependencies
 cd backend
-docker build -t $BACKEND_REPO:latest .
-docker push $BACKEND_REPO:latest
-```
+npm install
+cd ..
 
-#### Step 4: Deploy Frontend
-
-```bash
-# Get CloudFront distribution domain
-CLOUDFRONT_DOMAIN=$(aws cloudformation describe-stacks \
-  --stack-name PharmacyChatbotStack \
-  --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionDomain`].OutputValue' \
-  --output text)
-
-# Build frontend
+# Install frontend dependencies
 cd frontend
-REACT_APP_API_URL="https://$CLOUDFRONT_DOMAIN" npm run build
-
-# Deploy to S3
-BUCKET_NAME=$(aws cloudformation describe-stacks \
-  --stack-name PharmacyChatbotStack \
-  --query 'Stacks[0].Outputs[?OutputKey==`FrontendBucketName`].OutputValue' \
-  --output text)
-
-aws s3 sync build/ s3://$BUCKET_NAME --delete
-
-# Invalidate CloudFront cache
-DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-  --stack-name PharmacyChatbotStack \
-  --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
-  --output text)
-
-aws cloudfront create-invalidation \
-  --distribution-id $DISTRIBUTION_ID \
-  --paths "/*"
+npm install
+cd ..
 ```
 
-## 🔄 CI/CD with GitHub Actions
-
-### Setup
-
-1. **Fork/Clone** the repository to your GitHub account
-
-2. **Configure GitHub Secrets**:
-   - `AWS_ACCESS_KEY_ID`: Your AWS access key
-   - `AWS_SECRET_ACCESS_KEY`: Your AWS secret access key
-   - `OPENAI_API_KEY`: Your OpenAI API key
-
-3. **Push to main branch** to trigger automatic deployment
-
-### Workflow Features
-
-- **Automated Testing**: Runs unit tests and linting on every push
-- **Infrastructure as Code**: Deploys AWS resources using CDK
-- **Container Builds**: Builds and pushes Docker images to ECR
-- **Zero-Downtime Deployments**: Updates ECS services with rolling updates
-- **Cache Invalidation**: Automatically invalidates CloudFront cache
-
-## 📊 Monitoring and Observability
-
-### CloudWatch Dashboard
-
-The deployment includes a comprehensive monitoring dashboard with:
-
-- **ECS Service Metrics**: CPU/Memory utilization, task count
-- **Load Balancer Metrics**: Request count, response times, error rates
-- **CloudFront Metrics**: Cache hit ratio, origin requests
-- **Application Logs**: Error rates and custom metrics
-
-### Alerts
-
-Automated alerts are configured for:
-
-- High CPU/Memory usage (>80%)
-- High response times (>2 seconds)
-- HTTP 5xx errors
-- Application error logs
-
-### Accessing Monitoring
+### 3. Configure AWS Credentials
 
 ```bash
-# Get dashboard URL from outputs
-aws cloudformation describe-stacks \
-  --stack-name PharmacyChatbotStack \
-  --query 'Stacks[0].Outputs[?OutputKey==`DashboardUrl`].OutputValue' \
-  --output text
+aws configure
 ```
 
-## 🔧 Configuration
+### 4. Deploy with SST
 
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OPENAI_API_KEY` | OpenAI API key for chatbot | Required |
-| `PHARMACY_API_URL` | External pharmacy API URL | Mock API |
-| `NODE_ENV` | Node.js environment | production |
-| `PORT` | Backend server port | 3001 |
-
-### Scaling Configuration
-
-The ECS service is configured with:
-- **Min Capacity**: 1 task
-- **Max Capacity**: 10 tasks
-- **CPU Target**: 70% utilization
-- **Scale Out/In Cooldown**: 5 minutes
-
-## 🧪 Testing the Deployment
-
-### Automated Tests
+#### Development Deployment
 
 ```bash
-# Run full test suite
-npm test
+# Deploy to development stage
+npm run sst:dev
 
-# Test Docker builds
-docker-compose config
+# Or use the deployment script
+./scripts/deploy-sst.sh dev
 ```
 
-### Manual Testing
-
-1. **Frontend**: Visit the CloudFront URL
-2. **Backend API**: Test `/api/chatbot/pharmacies` endpoint
-3. **Chat Flow**: Test conversation with existing pharmacy
-4. **New Lead Flow**: Test with unknown phone number
-
-### Health Checks
-
-Both services include health check endpoints:
-- **Backend**: `GET /` (returns 200 for healthy service)
-- **Frontend**: `GET /health` (nginx health endpoint)
-
-## 🔄 Updates and Maintenance
-
-### Updating the Application
+#### Production Deployment
 
 ```bash
-# For code changes
-git push origin main  # Triggers CI/CD
+# Build and deploy to production
+npm run deploy
 
-# For infrastructure changes
-cd infrastructure
-npx cdk diff    # Preview changes
-npx cdk deploy  # Apply changes
+# Or use the deployment script for production
+./scripts/deploy-sst.sh production
 ```
 
-### Scaling the Service
+This will:
+1. Build the backend NestJS application
+2. Build the React frontend
+3. Deploy Lambda function for the API
+4. Deploy frontend to S3 with CloudFront
+5. Create necessary AWS resources
+6. Output the deployment URLs
+
+### 5. Set OpenAI API Key
+
+After deployment, set your OpenAI API key as a secret:
 
 ```bash
-# Manual scaling
-aws ecs update-service \
-  --cluster PharmacyChatbotCluster \
-  --service PharmacyChatbotBackend \
-  --desired-count 5
+# Set the secret value (replace with your actual key)
+sst secret set OpenAIAPIKey "your-openai-api-key-here"
 ```
 
-### Viewing Logs
+## Environment Variables
+
+### Backend Environment Variables (Lambda)
+
+- `NODE_ENV`: Set to 'production'
+- `OPENAI_API_KEY`: Retrieved from SST Secret
+- `PHARMACY_API_URL`: External API endpoint for pharmacy data
+
+### Frontend Environment Variables
+
+- `REACT_APP_API_URL`: Backend API URL (automatically configured by SST)
+
+## Development with SST
+
+### Live Lambda Development
+
+SST's Live Lambda Development allows you to test your functions locally:
 
 ```bash
-# Backend logs
-aws logs tail /aws/ecs/pharmacy-chatbot-backend --follow
+# Start live development
+sst dev
 
-# ECS service events
-aws ecs describe-services \
-  --cluster PharmacyChatbotCluster \
-  --services PharmacyChatbotBackend
+# Your Lambda functions will run locally but connect to real AWS resources
 ```
 
-## 🔥 Troubleshooting
+### SST Console
+
+Monitor your application with the SST Console:
+
+```bash
+# Open the SST console
+sst console
+```
+
+The console provides:
+- Real-time logs
+- Function metrics
+- Secret management
+- Resource overview
+
+## Monitoring and Logs
+
+### CloudWatch Logs
+
+Backend logs are available in CloudWatch at:
+- Log Group: `/aws/lambda/pharmacy-chatbot-<stage>-PharmacyChatbotApi`
+
+### Function Monitoring
+
+Monitor through:
+- SST Console (recommended)
+- AWS Lambda Console
+- CloudWatch Metrics
+
+## Scaling
+
+Lambda automatically scales based on demand:
+- **Concurrent Executions**: Up to 1000 by default (can be increased)
+- **Cold Start Optimization**: SST optimizes bundle size for faster cold starts
+- **Auto Scaling**: No configuration needed, handles traffic spikes automatically
+
+## Security
+
+### Network Security
+- Lambda functions run in AWS managed VPC by default
+- API Gateway provides DDoS protection
+- CloudFront provides additional security headers
+
+### Secrets Management
+- OpenAI API key stored as SST Secret (backed by AWS Secrets Manager)
+- IAM roles with least privilege access
+- No long-lived credentials in code
+
+### HTTPS/SSL
+- API Gateway provides HTTPS endpoints
+- CloudFront enforces HTTPS for frontend
+- Automatic SSL certificate management
+
+## Cost Optimization
+
+### Serverless Benefits
+- **Pay per Request**: No idle costs
+- **No Server Management**: No EC2 instances to manage
+- **Automatic Scaling**: No over-provisioning needed
+
+### Cost Monitoring
+- Use AWS Cost Explorer
+- Monitor Lambda invocations and duration
+- CloudFront has generous free tier
+
+## Troubleshooting
 
 ### Common Issues
 
-1. **ECS Service Won't Start**
-   - Check CloudWatch logs for container errors
-   - Verify environment variables and secrets
-   - Ensure Docker image is valid
+1. **Lambda Function Errors**
+   ```bash
+   # View real-time logs
+   sst dev
+   
+   # Or check CloudWatch logs
+   aws logs tail /aws/lambda/pharmacy-chatbot-dev-PharmacyChatbotApi --follow
+   ```
 
 2. **Frontend Not Loading**
-   - Check S3 bucket contents
-   - Verify CloudFront distribution status
-   - Check browser network tab for errors
+   - Check CloudFront distribution
+   - Verify S3 bucket deployment
+   - Ensure build completed successfully
 
-3. **API Errors**
-   - Verify OpenAI API key is set correctly
-   - Check external pharmacy API availability
-   - Review backend application logs
+3. **API Not Responding**
+   - Check Lambda function logs
+   - Verify API Gateway configuration
+   - Check SST console for errors
 
-### Recovery Procedures
-
-```bash
-# Restart ECS service
-aws ecs update-service \
-  --cluster PharmacyChatbotCluster \
-  --service PharmacyChatbotBackend \
-  --force-new-deployment
-
-# Rebuild and redeploy
-./scripts/deploy.sh
-
-# Emergency rollback (if needed)
-aws ecs update-service \
-  --cluster PharmacyChatbotCluster \
-  --service PharmacyChatbotBackend \
-  --task-definition previous-task-definition-arn
-```
-
-## 💰 Cost Optimization
-
-### Cost Breakdown (Estimated Monthly)
-
-- **ECS Fargate**: ~$30-60 (2 tasks, 0.5 vCPU, 1GB RAM)
-- **Application Load Balancer**: ~$20
-- **CloudFront**: ~$5-15 (depending on traffic)
-- **S3**: ~$1-5
-- **ECR**: ~$1-3
-- **Secrets Manager**: ~$1
-- **CloudWatch**: ~$5-10
-
-**Total**: ~$60-115/month (varies with usage)
-
-### Cost Saving Tips
-
-1. Use **Spot instances** for non-production environments
-2. Set up **auto-scaling** to minimize idle resources
-3. Enable **S3 lifecycle policies** for log archival
-4. Use **CloudFront** caching to reduce origin requests
-
-## 🗑️ Cleanup
-
-To avoid ongoing charges, destroy the resources when no longer needed:
+### Useful Commands
 
 ```bash
-# Automated cleanup
-./scripts/destroy.sh
+# View deployment status
+sst status
 
-# Manual cleanup
-cd infrastructure
-npx cdk destroy --force
+# View all resources
+sst console
+
+# Update a specific function
+sst deploy --stage dev
+
+# View logs
+sst logs --stage dev
+
+# Remove deployment
+sst remove --stage dev
 ```
 
-## 🛡️ Security Best Practices
+## Stage Management
 
-### Implemented Security Measures
+SST supports multiple stages:
 
-- **Secrets Management**: API keys stored in AWS Secrets Manager
-- **Network Security**: VPC with private subnets for ECS tasks
-- **HTTPS Only**: CloudFront redirects HTTP to HTTPS
-- **Container Security**: Non-root user, minimal base image
-- **Access Control**: IAM roles with least privilege
+```bash
+# Deploy to development
+sst deploy --stage dev
 
-### Additional Recommendations
+# Deploy to staging
+sst deploy --stage staging
 
-1. **Enable AWS WAF** for additional protection
-2. **Set up AWS Config** for compliance monitoring
-3. **Use AWS Systems Manager** for secure parameter storage
-4. **Enable VPC Flow Logs** for network monitoring
+# Deploy to production
+sst deploy --stage production
+```
 
-## 📞 Support
+Each stage is isolated with its own resources.
 
-For issues or questions:
+## Cleanup
 
-1. Check the **troubleshooting section** above
-2. Review **CloudWatch logs** for errors
-3. Check **GitHub Issues** for known problems
-4. Create a **new issue** with detailed information
+To remove all AWS resources:
 
----
+```bash
+# Remove development stage
+sst remove --stage dev
 
-Happy deploying! 🚀
+# Remove production stage
+sst remove --stage production
+
+# Or use the destroy script
+./scripts/destroy-sst.sh <stage>
+```
+
+## Migration from CDK
+
+The previous CDK infrastructure has been backed up to `infrastructure-cdk-backup/`. Key differences:
+
+### Before (CDK + ECS)
+- ECS Fargate containers
+- Application Load Balancer
+- Always-on infrastructure
+- Complex networking setup
+
+### After (SST + Lambda)
+- Serverless Lambda functions
+- API Gateway
+- Pay-per-use pricing
+- Simplified architecture
+
+### Benefits of Migration
+- **Lower Costs**: No always-on containers
+- **Better DX**: Live development with SST
+- **Faster Deployments**: Incremental updates
+- **Easier Scaling**: Automatic Lambda scaling
+- **Simpler Ops**: No container management
+
+## Support
+
+For deployment issues:
+1. Check SST console first (`sst console`)
+2. Review CloudWatch logs
+3. Use `sst dev` for local debugging
+4. Check SST documentation: https://docs.sst.dev/
+5. Contact your AWS support team if needed
+
+## Useful Resources
+
+- [SST Documentation](https://docs.sst.dev/)
+- [SST Examples](https://github.com/sst/sst/tree/master/examples)
+- [AWS Lambda Best Practices](https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html)

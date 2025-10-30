@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatMessage, Pharmacy, ApiResponse } from '../types';
 import { chatbotAPI } from '../services/api';
+import ScheduleCallbackModal from './ScheduleCallbackModal';
+import SendEmailModal from './SendEmailModal';
 import './ChatInterface.css';
 
 interface ChatInterfaceProps {
@@ -16,7 +18,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ phoneNumber, onPhoneNumbe
   const [isNewLead, setIsNewLead] = useState(false);
   const [collectingInfo, setCollectingInfo] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
+  const [showCallbackModal, setShowCallbackModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,6 +51,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ phoneNumber, onPhoneNumbe
         setIsNewLead(response.isNewLead || false);
         setCollectingInfo(response.isNewLead || false);
         setChatStarted(true);
+        // Focus input after starting chat
+        setTimeout(() => inputRef.current?.focus(), 100);
       } else {
         alert(response.message);
       }
@@ -105,18 +112,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ phoneNumber, onPhoneNumbe
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      // Focus input after receiving response
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  const handleScheduleCallback = async () => {
-    const preferredTime = prompt('When would you prefer to be called back? (e.g., "Tomorrow at 2 PM", "Friday morning")');
-    if (!preferredTime) return;
+  const handleScheduleCallback = () => {
+    setShowCallbackModal(true);
+  };
 
-    const notes = prompt('Any additional notes for the callback? (optional)');
-
+  const handleCallbackSubmit = async (preferredTime: string, notes?: string) => {
     setIsLoading(true);
     try {
-      const response = await chatbotAPI.scheduleCallback(phoneNumber, preferredTime, notes || undefined);
+      const response = await chatbotAPI.scheduleCallback(phoneNumber, preferredTime, notes);
       
       const message: ChatMessage = {
         role: 'assistant',
@@ -129,15 +137,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ phoneNumber, onPhoneNumbe
       alert('Failed to schedule callback. Please try again.');
     } finally {
       setIsLoading(false);
+      // Focus input after callback action
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = () => {
     if (!pharmacy?.email && !collectingInfo) {
       alert('Email address not available. Please provide an email address first.');
       return;
     }
+    setShowEmailModal(true);
+  };
 
+  const handleEmailConfirm = async () => {
     setIsLoading(true);
     try {
       const response = await chatbotAPI.sendFollowUpEmail(phoneNumber);
@@ -153,6 +166,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ phoneNumber, onPhoneNumbe
       alert('Failed to send email. Please try again.');
     } finally {
       setIsLoading(false);
+      // Focus input after email action
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
@@ -246,6 +261,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ phoneNumber, onPhoneNumbe
         <>
           <div className="input-section">
             <textarea
+              ref={inputRef}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -268,6 +284,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ phoneNumber, onPhoneNumbe
           </div>
         </>
       )}
+
+      <ScheduleCallbackModal
+        isOpen={showCallbackModal}
+        onClose={() => setShowCallbackModal(false)}
+        onSubmit={handleCallbackSubmit}
+        isLoading={isLoading}
+      />
+
+      <SendEmailModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onConfirm={handleEmailConfirm}
+        pharmacyEmail={pharmacy?.email}
+        isLoading={isLoading}
+      />
     </div>
   );
 };
