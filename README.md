@@ -60,11 +60,8 @@ A sophisticated inbound sales chatbot for Pharmesol that handles calls from phar
 
 4. **Or run manually**
    ```bash
-   # Backend
-   cd backend && npm install && npm run start:dev
-   
-   # Frontend (new terminal)
-   cd frontend && npm install && npm start
+   # Root
+   npm run start
    ```
 
 5. **Access the application**
