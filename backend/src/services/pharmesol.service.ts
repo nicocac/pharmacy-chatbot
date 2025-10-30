@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 
 @Injectable()
@@ -7,10 +6,9 @@ export class PharmesolService {
   private readonly logger = new Logger(PharmesolService.name);
   private readonly openai: OpenAI;
 
-  constructor(private configService: ConfigService) {
+  constructor() {
     this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY') || 
-              process.env.OPENAI_API_KEY,
+      apiKey: process.env.OPENAI_API_KEY,
     });
   }
 

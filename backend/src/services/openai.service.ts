@@ -1,5 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import OpenAI from 'openai';
 import {
   ConversationContext,
@@ -13,12 +12,11 @@ export class OpenAIService {
   private readonly openai: OpenAI;
 
   constructor(
-    private configService: ConfigService,
-    private pharmeSolService: PharmesolService,
+    @Inject(forwardRef(() => PharmesolService))
+    private pharmesolService: PharmesolService
   ) {
     this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY') || 
-              process.env.OPENAI_API_KEY,
+      apiKey: process.env.OPENAI_API_KEY,
     });
   }
 
@@ -29,9 +27,9 @@ export class OpenAIService {
         context.conversation[context.conversation.length - 1];
       if (
         latestMessage?.role === 'user' &&
-        (await this.pharmeSolService.isPharmesolQuestion(latestMessage.content))
+        (await this.pharmesolService.isPharmesolQuestion(latestMessage.content))
       ) {
-        return this.pharmeSolService.getPharmesolResponse();
+        return this.pharmesolService.getPharmesolResponse();
       }
 
       const systemPrompt = this.buildSystemPrompt(context);

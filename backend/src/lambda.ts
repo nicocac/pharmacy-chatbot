@@ -1,18 +1,17 @@
+import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import serverlessExpress from '@codegenie/serverless-express';
 import { Context, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import express from 'express';
 
 let server: any;
 
 async function bootstrap() {
-  const expressApp = express();
-  const adapter = new ExpressAdapter(expressApp);
-  
-  const app = await NestFactory.create(AppModule, adapter);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn'],
+    abortOnError: false,
+  });
   
   // Enable CORS
   app.enableCors({
@@ -28,7 +27,7 @@ async function bootstrap() {
   
   await app.init();
   
-  return serverlessExpress({ app: expressApp });
+  return serverlessExpress({ app: app.getHttpAdapter().getInstance() });
 }
 
 export const handler = async (

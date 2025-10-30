@@ -14,6 +14,9 @@ async function bootstrap() {
   // Enable validation pipes
   app.useGlobalPipes(new ValidationPipe());
 
+  // Set global prefix to match frontend expectations
+  app.setGlobalPrefix('api');
+
   await app.listen(process.env.PORT ?? 3001);
   console.log(
     `Pharmacy Chatbot API running on port ${process.env.PORT ?? 3001}`,

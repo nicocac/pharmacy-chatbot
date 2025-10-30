@@ -10,7 +10,7 @@ import {
 } from '../dto/chat.dto';
 import { ConversationContext } from '../interfaces/pharmacy.interface';
 
-@Controller('api/chatbot')
+@Controller('chatbot')
 export class ChatbotController {
   private readonly logger = new Logger(ChatbotController.name);
   private conversations = new Map<string, ConversationContext>();

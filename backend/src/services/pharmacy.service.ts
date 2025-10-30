@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { Pharmacy } from '../interfaces/pharmacy.interface';
 
@@ -8,9 +7,9 @@ export class PharmacyService {
   private readonly logger = new Logger(PharmacyService.name);
   private readonly apiUrl: string;
 
-  constructor(private configService: ConfigService) {
+  constructor() {
     this.apiUrl =
-      this.configService.get<string>('PHARMACY_API_URL') ||
+      process.env.PHARMACY_API_URL ||
       'https://67e14fb758cc6bf785254550.mockapi.io/pharmacies';
   }
 
